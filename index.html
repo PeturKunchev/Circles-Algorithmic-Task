@@ -131,7 +131,7 @@ const ys = circles.flatMap(c => [c.y - c.r, c.y + c.r]);
         return canvas.height - (margin + (y - minY) * scale);
     }
 
-    // ребра
+
     ctx.strokeStyle = "#aaa";
     for (let i = 0; i < circles.length; i++) {
         for (const j of graph[i]) {
@@ -144,7 +144,7 @@ const ys = circles.flatMap(c => [c.y - c.r, c.y + c.r]);
         }
     }
 
-    // път
+
     if (path.length > 1) {
         ctx.strokeStyle = "red";
         ctx.lineWidth = 3;
@@ -157,17 +157,41 @@ const ys = circles.flatMap(c => [c.y - c.r, c.y + c.r]);
         ctx.lineWidth = 1;
     }
 
-    // окръжности
+
     circles.forEach((c, i) => {
-        ctx.beginPath();
-        ctx.arc(mapX(c.x), mapY(c.y), c.r * scale, 0, 2 * Math.PI);
+    const cx = mapX(c.x);
+    const cy = mapY(c.y);
 
-        if (i === 0) ctx.strokeStyle = "green";
-        else if (i === circles.length - 1) ctx.strokeStyle = "red";
-        else ctx.strokeStyle = "black";
 
-        ctx.stroke();
-    });
+    ctx.beginPath();
+    ctx.arc(cx, cy, c.r * scale, 0, 2 * Math.PI);
+
+    if (i === 0) ctx.strokeStyle = "green";
+    else if (i === circles.length - 1) ctx.strokeStyle = "red";
+    else ctx.strokeStyle = "black";
+
+    ctx.stroke();
+
+
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+
+    ctx.font = "12px Arial";
+    ctx.fillStyle = "blue";
+    ctx.fillText(i + 1, cx + 5, cy - 5);
+});
+if (path.length > 1) {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "red";
+    ctx.fillText(
+        "Брой сегменти: " + (path.length - 1),
+        20,
+        30
+    );
+}
 }
 </script>
 
