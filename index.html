@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<title>Round – визуализация</title>
+<style>
+  body { font-family: Arial, sans-serif; }
+  canvas { border: 1px solid #000; }
+  textarea { width: 600px; height: 120px; }
+</style>
+</head>
+<body>
+
+<h2>Визуализация на окръжностите</h2>
+
+<textarea id="input">
+3
+0 0 1
+4 0 4
+1 0 2
+</textarea><br><br>
+
+<button onclick="run()">Покажи</button>
+<p id="result"></p>
+
+<canvas id="canvas" width="600" height="600"></canvas>
+
+<script>
+function round(input) {
+    const data = input.trim().split(/\s+/);
+    let idx = 0;
+
+    const n = Number(data[idx++]);
+    const circles = [];
+
+    for (let i = 0; i < n; i++) {
+        const x = Number(data[idx++]);
+        const y = Number(data[idx++]);
+        const r = Number(data[idx++]);
+        circles.push({ x, y, r });
+    }
+
+    function intersectTwoPoints(c1, c2) {
+        const dx = c1.x - c2.x;
+        const dy = c1.y - c2.y;
+        const d2 = dx * dx + dy * dy;
+
+        const rSum = c1.r + c2.r;
+        const rDiff = Math.abs(c1.r - c2.r);
+
+        return (rDiff * rDiff < d2) && (d2 < rSum * rSum);
+    }
+
+    const graph = Array.from({ length: n }, () => []);
+
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (intersectTwoPoints(circles[i], circles[j])) {
+                graph[i].push(j);
+                graph[j].push(i);
+            }
+        }
+    }
+
+    const dist = Array(n).fill(-1);
+    const parent = Array(n).fill(-1);
+    const queue = [];
+
+    dist[0] = 0;
+    queue.push(0);
+
+    while (queue.length) {
+        const v = queue.shift();
+        for (const next of graph[v]) {
+            if (dist[next] === -1) {
+                dist[next] = dist[v] + 1;
+                parent[next] = v;
+                queue.push(next);
+            }
+        }
+    }
+
+    let path = [];
+    if (dist[n - 1] !== -1) {
+        let cur = n - 1;
+        while (cur !== -1) {
+            path.push(cur);
+            cur = parent[cur];
+        }
+        path.reverse();
+    }
+
+    return { circles, graph, dist: dist[n - 1], path };
+}
+
+function run() {
+    const input = document.getElementById("input").value;
+    const { circles, graph, dist, path } = round(input);
+
+    document.getElementById("result").textContent =
+        dist === -1 ? "Няма път" : "Най-къс път: " + dist;
+
+    draw(circles, graph, path);
+}
+
+function draw(circles, graph, path) {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const margin = 50;
+const xs = circles.flatMap(c => [c.x - c.r, c.x + c.r]);
+const ys = circles.flatMap(c => [c.y - c.r, c.y + c.r]);
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const scale = Math.min(
+        (canvas.width - 2 * margin) / (maxX - minX + 1),
+        (canvas.height - 2 * margin) / (maxY - minY + 1)
+    );
+
+    function mapX(x) {
+        return margin + (x - minX) * scale;
+    }
+
+    function mapY(y) {
+        return canvas.height - (margin + (y - minY) * scale);
+    }
+
+    // ребра
+    ctx.strokeStyle = "#aaa";
+    for (let i = 0; i < circles.length; i++) {
+        for (const j of graph[i]) {
+            if (j > i) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(circles[i].x), mapY(circles[i].y));
+                ctx.lineTo(mapX(circles[j].x), mapY(circles[j].y));
+                ctx.stroke();
+            }
+        }
+    }
+
+    // път
+    if (path.length > 1) {
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(mapX(circles[path[0]].x), mapY(circles[path[0]].y));
+        for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(mapX(circles[path[i]].x), mapY(circles[path[i]].y));
+        }
+        ctx.stroke();
+        ctx.lineWidth = 1;
+    }
+
+    // окръжности
+    circles.forEach((c, i) => {
+        ctx.beginPath();
+        ctx.arc(mapX(c.x), mapY(c.y), c.r * scale, 0, 2 * Math.PI);
+
+        if (i === 0) ctx.strokeStyle = "green";
+        else if (i === circles.length - 1) ctx.strokeStyle = "red";
+        else ctx.strokeStyle = "black";
+
+        ctx.stroke();
+    });
+}
+</script>
+
+</body>
+</html>
